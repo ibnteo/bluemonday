@@ -94,6 +94,9 @@ type Policy struct {
 	setOfElementsAllowedWithoutAttrs map[string]struct{}
 
 	setOfElementsToSkipContent map[string]struct{}
+
+	// Void elements (img, hr, br, etc.)
+	setOfElementsVoid map[string]struct{}
 }
 
 type attrPolicy struct {
@@ -121,6 +124,7 @@ func (p *Policy) init() {
 		p.allowURLSchemes = make(map[string]urlPolicy)
 		p.setOfElementsAllowedWithoutAttrs = make(map[string]struct{})
 		p.setOfElementsToSkipContent = make(map[string]struct{})
+		p.setOfElementsVoid = make(map[string]struct{})
 		p.initialized = true
 	}
 }
@@ -135,6 +139,8 @@ func NewPolicy() *Policy {
 
 	p.addDefaultElementsWithoutAttrs()
 	p.addDefaultSkipElementContent()
+
+	p.addDefaultElementsVoid()
 
 	return &p
 }
@@ -429,6 +435,27 @@ func (p *Policy) AllowElementsContent(names ...string) *Policy {
 	}
 
 	return p
+}
+
+func (p *Policy) addDefaultElementsVoid() {
+	p.init()
+
+	p.setOfElementsVoid["area"] = struct{}{}
+	p.setOfElementsVoid["base"] = struct{}{}
+	p.setOfElementsVoid["br"] = struct{}{}
+	p.setOfElementsVoid["col"] = struct{}{}
+	p.setOfElementsVoid["command"] = struct{}{}
+	p.setOfElementsVoid["embed"] = struct{}{}
+	p.setOfElementsVoid["hr"] = struct{}{}
+	p.setOfElementsVoid["img"] = struct{}{}
+	p.setOfElementsVoid["input"] = struct{}{}
+	p.setOfElementsVoid["keygen"] = struct{}{}
+	p.setOfElementsVoid["link"] = struct{}{}
+	p.setOfElementsVoid["meta"] = struct{}{}
+	p.setOfElementsVoid["param"] = struct{}{}
+	p.setOfElementsVoid["source"] = struct{}{}
+	p.setOfElementsVoid["track"] = struct{}{}
+	p.setOfElementsVoid["wbr"] = struct{}{}
 }
 
 // addDefaultElementsWithoutAttrs adds the HTML elements that we know are valid

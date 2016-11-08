@@ -93,6 +93,7 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 		skipClosingTag           bool
 		closingTagToSkipStack    []string
 		mostRecentlyStartedToken string
+		openTags                 []string
 	)
 
 	tokenizer := html.NewTokenizer(r)
@@ -100,6 +101,10 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 		if tokenizer.Next() == html.ErrorToken {
 			err := tokenizer.Err()
 			if err == io.EOF {
+				// Close open tags
+				for i := len(openTags) - 1; i > 0; i-- {
+					buff.WriteString("</" + openTags[i] + ">")
+				}
 				// End of input means end of processing
 				return &buff
 			}
@@ -151,6 +156,11 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 				}
 			}
 
+			// Tag open
+			if !p.elementVoid(token.Data) {
+				openTags = append(openTags, token.Data)
+			}
+
 			if !skipElementContent {
 				buff.WriteString(token.String())
 			}
@@ -181,8 +191,21 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 				break
 			}
 
-			if !skipElementContent {
-				buff.WriteString(token.String())
+			if len(openTags) == 0 {
+				// Skip closed tag
+				buff.WriteString(" ")
+			} else if openTags[len(openTags)-1] != token.Data {
+				// Close previous tag
+				if !p.elementVoid(token.Data) {
+					buff.WriteString("</" + openTags[len(openTags)-1] + ">")
+				}
+				openTags = openTags[:len(openTags)-1]
+			} else if !skipElementContent {
+				// Close current tag
+				if !p.elementVoid(token.Data) {
+					buff.WriteString(token.String())
+				}
+				openTags = openTags[:len(openTags)-1]
 			}
 
 		case html.SelfClosingTagToken:
@@ -481,6 +504,11 @@ func (p *Policy) sanitizeAttrs(
 
 func (p *Policy) allowNoAttrs(elementName string) bool {
 	_, ok := p.setOfElementsAllowedWithoutAttrs[elementName]
+	return ok
+}
+
+func (p *Policy) elementVoid(elementName string) bool {
+	_, ok := p.setOfElementsVoid[elementName]
 	return ok
 }
 
