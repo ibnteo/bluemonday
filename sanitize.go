@@ -102,7 +102,7 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 			err := tokenizer.Err()
 			if err == io.EOF {
 				// Close open tags
-				for i := len(openTags) - 1; i > 0; i-- {
+				for i := len(openTags) - 1; i >= 0; i-- {
 					buff.WriteString("</" + openTags[i] + ">")
 				}
 				// End of input means end of processing
